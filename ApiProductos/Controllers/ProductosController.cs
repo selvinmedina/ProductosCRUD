@@ -1,6 +1,7 @@
 ﻿using ApiProductos.Models;
 using ApiProductos.Models.ViewModels;
 using ApiProductos.Utilities;
+using Common;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Entity;
@@ -20,35 +21,38 @@ namespace ApiProductos.Controllers
         private ProductosDBContext db = new ProductosDBContext();
 
         // GET: api/Productos
-        public IQueryable<Producto> GetProductos()
+        public ResponseHelper<List<ProductosSelect>> GetProductos()
         {
-            List<ProductosSelect> productos = null;
-
-            using (SqlConnection connection = General.GetConnection())
+            ResponseHelper<List<ProductosSelect>> rs = new ResponseHelper<List<ProductosSelect>>();
+            try
             {
-                //Comenzar la lectura
-                connection.Open();
-                using (SqlCommand command = new SqlCommand("SELECT tps.* FROM Prod.tbProductoSelect tps", connection))
+                using (SqlConnection connection = General.GetConnection())
                 {
-                    using (SqlDataReader reader = command.ExecuteReader())
-                    {
-                        productos = GetFromReader(reader)
-                            .Select(
-                            x => new ProductosSelect(
-                                (int)x["id"],
-                                (string)x["nombre"],
-                                (string)x["marca"],
-                                (string)x["imagen"],
-                                (int)x["categoria"],
-                                (int)x["proveedor"],
-                                (bool)x["estado"],
-                                (bool)x["agotado"]
-                                )
-                            ).ToList();
-                    }
+                    //Comenzar la lectura
+                    connection.Open();
+                    rs.Result = GetReader(new SqlCommand("SELECT tps.* FROM Prod.tbProductoSelect tps", connection)
+                        .ExecuteReader())
+                               .Select(
+                               x => new ProductosSelect(
+                                   (int)x["id"],
+                                   (string)x["nombre"],
+                                   (string)x["marca"],
+                                   (string)x["imagen"],
+                                   (int)x["categoria"],
+                                   (int)x["proveedor"],
+                                   (bool)x["estado"],
+                                   (bool)x["agotado"]
+                                   )
+                               ).ToList();
+                    rs.SetResponse(true, "success");
                 }
+
             }
-            return db.Productos;
+            catch (SqlException ex)
+            {
+                rs.SetResponse(false, "failed");
+            }
+            return rs;
         }
 
         // GET: api/Productos/5

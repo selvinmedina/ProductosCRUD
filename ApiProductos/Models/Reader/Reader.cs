@@ -8,7 +8,7 @@ namespace ApiProductos.Models.Reader
 {
     public static class Reader
     {
-        public static IEnumerable<IDataRecord> GetFromReader(IDataReader reader)
+        public static IEnumerable<IDataRecord> GetReader(IDataReader reader)
         {
             while (reader.Read()) yield return reader;
         }

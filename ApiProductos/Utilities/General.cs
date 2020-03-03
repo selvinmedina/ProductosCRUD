@@ -11,7 +11,7 @@ namespace ApiProductos.Utilities
     {
         public static SqlConnection GetConnection()
         {
-            return new SqlConnection(ConfigurationManager.ConnectionStrings["ERP_GMEDINAConnectionString"].ConnectionString);
+            return new SqlConnection(ConfigurationManager.ConnectionStrings["Productos"].ConnectionString);
         }
     }
 }
