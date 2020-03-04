@@ -40,6 +40,7 @@ namespace ApiProductos.Controllers
                             )
                             .ExecuteReader() //Ejecutar el SqlCommand
                             .Enumerate() //Iterar los resultados
+
                             .Select( //Crear instancias de objetos para el listado del tipo de retorno
                                    x => new ProductosSelect(
                                        (int)x["id"],
@@ -51,7 +52,8 @@ namespace ApiProductos.Controllers
                                        (bool)x["estado"],
                                        (bool)x["agotado"]
                                        )
-                                   ).ToList();
+                                   )
+                                   .Where(x => x.estado == true).ToList();
 
                         rs.SetResponse(true, Status.Success); //Poner como success la respuesta
                     }
@@ -184,17 +186,44 @@ namespace ApiProductos.Controllers
         public async Task<ResponseHelper> DeleteProducto(int id)
         {
             ResponseHelper rs = new ResponseHelper();
-            Producto producto = await db.Productos.FindAsync(id);
-            if (producto == null)
-            {
-                return rs.SetResponse(false, Status.Error, HttpStatusCode.BadRequest);
-
-            }
 
             try
             {
-                db.Productos.Remove(producto);
-                await db.SaveChangesAsync();
+                await Task.Run(() =>
+                {
+                    //SqlTransaction transaccion = null; //Usar la transaccion
+                    using (SqlConnection connection = General.GetConnection())
+                    {
+                        connection.Open();
+                        using (SqlCommand command = new SqlCommand("Prod.tbProducto_Delete", connection))
+                        {
+                            command.CommandType = CommandType.StoredProcedure; //Comando de tipo procedimiento
+                            using (TransactionScope transaction = new TransactionScope())
+                            {
+                                command.Parameters.AddWithValue("@prod_id", SqlDbType.Int).Value = id;
+
+                                Result resultado = command
+                                .ExecuteReader()
+                                .Enumerate()
+                                .Select(
+                                    x => new Result
+                                    {
+                                        Id = (int)x["Id"],
+                                        MensajeError = (string)x["MensajeError"]
+                                    })
+                                    .FirstOrDefault();
+
+                                if (resultado?.Id == -1)
+                                    rs.SetResponse(false, Status.Error, HttpStatusCode.InternalServerError);
+                                else
+                                {
+                                    rs.Result = new object();
+                                    rs.SetResponse(true, Status.Success, HttpStatusCode.Created);
+                                }
+                            }
+                        }
+                    }
+                });
             }
             catch (Exception)
             {
