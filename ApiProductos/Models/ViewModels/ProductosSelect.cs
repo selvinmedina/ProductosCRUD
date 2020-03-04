@@ -11,7 +11,7 @@ namespace ApiProductos.Models.ViewModels
         {
         }
 
-        public ProductosSelect(int id, string nombre, string marca, string imagen, int categoria, int proveedor, bool estado, bool agotado)
+        public ProductosSelect(int id, string nombre, string marca, string imagen, string categoria, string proveedor, bool estado, bool agotado)
         {
             this.id = id;
             this.nombre = nombre;
@@ -27,8 +27,8 @@ namespace ApiProductos.Models.ViewModels
         public string nombre { get; set; }
         public string marca { get; set; }
         public string imagen { get; set; }
-        public int categoria { get; set; }
-        public int proveedor { get; set; }
+        public string categoria { get; set; }
+        public string proveedor { get; set; }
         public bool estado { get; set; }
         public bool agotado { get; set; }
     }
