@@ -284,7 +284,7 @@ namespace ApiProductos.Controllers
         }
 
         [Route("api/Productos/ProductoExists"), HttpGet]
-        public async Task<bool> ProductoExists(int idProducto)
+        public async Task<bool> ProductoExists(string nombreProducto)
         {
             return await Task.Run(() =>
             {
@@ -296,7 +296,7 @@ namespace ApiProductos.Controllers
                         connection.Open();
 
                         return new SqlCommand(
-                                "SELECT TOP 1 id FROM Prod.tbProductoSelect WHERE id = " + idProducto + " AND estado = 1", //Consulta que quiero hacer a la base de datos
+                                $"SELECT TOP 1 prod_id FROM Prod.tbProductos WHERE prod_nombre = '{nombreProducto}'", //Consulta que quiero hacer a la base de datos
                                 connection //Cadena de conexion
                                 )
                                 .ExecuteScalar() != null; //Ejecutar el SqlCommand
