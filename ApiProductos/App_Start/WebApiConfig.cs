@@ -18,10 +18,9 @@ namespace ApiProductos
             );
 
             config.Routes.MapHttpRoute(
-               name: "Saber si existe",
+               name: "Exists",
                routeTemplate: "api/{controller}/{action}/{id}",
-               defaults: new { code = RouteParameter.Optional },
-               constraints: new { id = @"\d+" }
+               defaults: new { id = RouteParameter.Optional }
                );
         }
     }

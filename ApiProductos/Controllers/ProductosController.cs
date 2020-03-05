@@ -6,12 +6,14 @@ using Common;
 using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Data.Entity;
 using System.Data.SqlClient;
+using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Threading.Tasks;
 using System.Transactions;
+using System.Web;
 using System.Web.Http;
 using System.Web.Http.Description;
 using static ApiProductos.Models.Reader.Reader;
@@ -35,7 +37,7 @@ namespace ApiProductos.Controllers
                         //Comenzar la lectura
                         connection.Open();
                         rs.Result = new SqlCommand(
-                            "SELECT tps.* FROM Prod.tbProductoSelect tps", //Consulta que quiero hacer a la base de datos
+                            "SELECT tps.* FROM Prod.tbProductoSelect tps WHERE tps.estado = 1", //Consulta que quiero hacer a la base de datos
                             connection //Cadena de conexion
                             )
                             .ExecuteReader() //Ejecutar el SqlCommand
@@ -281,11 +283,68 @@ namespace ApiProductos.Controllers
             base.Dispose(disposing);
         }
 
-        [ResponseType(typeof(int))]
-        [Route("ProductoExists")]
-        public bool ProductoExists(int id)
+        [Route("api/Productos/ProductoExists"), HttpGet]
+        public async Task<bool> ProductoExists(int idProducto)
         {
-            return db.Productos.Count(e => e.prod_id == id) > 0;
+            return await Task.Run(() =>
+            {
+                try
+                {
+                    using (SqlConnection connection = General.GetConnection())
+                    {
+                        //Comenzar la lectura
+                        connection.Open();
+
+                        return new SqlCommand(
+                                "SELECT TOP 1 id FROM Prod.tbProductoSelect WHERE id = " + idProducto + " AND estado = 1", //Consulta que quiero hacer a la base de datos
+                                connection //Cadena de conexion
+                                )
+                                .ExecuteScalar() != null; //Ejecutar el SqlCommand
+                    }
+                }
+                catch (Exception)
+                {
+                    return false;
+                }
+            });
+        }
+
+
+        [Route("api/Productos/UploadFile/")]
+        public async Task<ResponseHelper<string>> UploadFile(string imagenAnterior = "")
+        {
+            #region Variables
+            string path = "~/Content/images/";
+            var ctx = HttpContext.Current;
+            var root = ctx.Server.MapPath(path);
+            var provider = new MultipartFormDataStreamProvider(root);
+            string name = "";
+            ResponseHelper<string> rs = new ResponseHelper<string>();
+            #endregion
+
+            //Eliminar la imagen anterior
+            try
+            {
+                if (imagenAnterior != null && imagenAnterior != "" && File.Exists(root + imagenAnterior))
+                    File.Delete(root + imagenAnterior);
+
+                await Request.Content.ReadAsMultipartAsync(provider);
+
+                foreach (var file in provider.FileData)
+                {
+                    name = General.CrearNombreImagen(100) + DateTime.Now.ToString("yyyyMMddHHmmss") + Path.GetExtension(file.Headers.ContentDisposition.FileName.Trim('"'));
+                    File.Move(file.LocalFileName, Path.Combine(root, name));
+
+                }
+                rs.Result = name;
+                rs.SetResponse(true, Status.Success, HttpStatusCode.Created);
+            }
+            catch (Exception ex)
+            {
+                rs.Result = name;
+                return rs.SetResponse(false, Status.Error, HttpStatusCode.InternalServerError);
+            }
+            return rs;
         }
     }
 }
