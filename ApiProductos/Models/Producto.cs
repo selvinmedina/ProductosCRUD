@@ -13,8 +13,14 @@ namespace ApiProductos.Models
         [Key]
         public int prod_id { get; set; }
 
-        [StringLength(150), MinLength(3), Required, Index(IsUnique = true)]
+        [StringLength(150), MinLength(3), Required]
         public string prod_nombre { get; set; }
+
+        [StringLength(5), MinLength(5), Required]
+        public string prod_codigo { get; set; }
+
+        [Required]
+        public decimal prod_precio { get; set; }
 
         [StringLength(100), MinLength(3), Required]
         public string prod_marca { get; set; }

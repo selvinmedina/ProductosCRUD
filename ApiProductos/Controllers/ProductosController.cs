@@ -52,7 +52,9 @@ namespace ApiProductos.Controllers
                                        (string)x["categoria"],
                                        (string)x["proveedor"],
                                        (bool)x["estado"],
-                                       (bool)x["agotado"]
+                                       (bool)x["agotado"],
+                                       (decimal)x["precio"],
+                                       (string)x["codigo"]
                                        )
                                    )
                                    .Where(x => x.estado == true).ToList();
@@ -118,7 +120,8 @@ namespace ApiProductos.Controllers
                                 command.Parameters.AddWithValue("@proveedor_id", SqlDbType.Int).Value = producto.proveedor_id;
                                 command.Parameters.AddWithValue("@prod_image", SqlDbType.Bit).Value = producto.prod_image;
                                 command.Parameters.AddWithValue("@prod_agotado", SqlDbType.Bit).Value = producto.prod_agotado;
-
+                                command.Parameters.AddWithValue("@prod_precio", SqlDbType.Decimal).Value = producto.prod_precio;
+                                command.Parameters.AddWithValue("@prod_codigo", SqlDbType.NVarChar).Value = producto.prod_codigo;
                                 Result resultado = command
                                 .ExecuteReader()
                                 .Enumerate()
@@ -189,6 +192,8 @@ namespace ApiProductos.Controllers
                                command.Parameters.AddWithValue("@proveedor_id", SqlDbType.Int).Value = producto.proveedor_id;
                                command.Parameters.AddWithValue("@prod_image", SqlDbType.Bit).Value = producto.prod_image;
                                command.Parameters.AddWithValue("@prod_agotado", SqlDbType.Bit).Value = producto.prod_agotado;
+                               command.Parameters.AddWithValue("@prod_precio", SqlDbType.Decimal).Value = producto.prod_precio;
+                               command.Parameters.AddWithValue("@prod_codigo", SqlDbType.NVarChar).Value = producto.prod_codigo;
 
                                Result resultado = command
                                .ExecuteReader()
@@ -284,7 +289,7 @@ namespace ApiProductos.Controllers
         }
 
         [Route("api/Productos/ProductoExists"), HttpGet]
-        public async Task<bool> ProductoExists(string nombreProducto)
+        public async Task<bool> ProductoExists(string codigoProducto)
         {
             return await Task.Run(() =>
             {
@@ -295,8 +300,9 @@ namespace ApiProductos.Controllers
                         //Comenzar la lectura
                         connection.Open();
 
+                        //Esto me va a retornar el primer registro y la primer columna, y retorna true o false dependiendo si existe el codigo del producto
                         return new SqlCommand(
-                                $"SELECT TOP 1 prod_id FROM Prod.tbProductos WHERE prod_nombre = '{nombreProducto}'", //Consulta que quiero hacer a la base de datos
+                                $"SELECT TOP 1 prod_id FROM Prod.tbProductos WHERE prod_codigo = '{codigoProducto}'", //Consulta que quiero hacer a la base de datos
                                 connection //Cadena de conexion
                                 )
                                 .ExecuteScalar() != null; //Ejecutar el SqlCommand

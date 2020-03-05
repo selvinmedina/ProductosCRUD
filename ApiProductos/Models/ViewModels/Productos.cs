@@ -4,7 +4,7 @@ namespace ApiProductos.Models.ViewModels
 {
     public class Productos
     {
-        public Productos(int id, string nombre, string marca, string imagen, int categoria, int proveedor, bool estado, bool agotado)
+        public Productos(int id, string nombre, string marca, string imagen, int categoria, int proveedor, bool estado, bool agotado, decimal precio, string codigo)
         {
             this.id = id;
             this.nombre = nombre;
@@ -14,6 +14,8 @@ namespace ApiProductos.Models.ViewModels
             this.proveedor = proveedor;
             this.estado = estado;
             this.agotado = agotado;
+            this.codigo = codigo;
+            this.precio = precio;
         }
 
         public int id { get; set; }
@@ -24,6 +26,8 @@ namespace ApiProductos.Models.ViewModels
         public int proveedor { get; set; }
         public bool estado { get; set; }
         public bool agotado { get; set; }
+        public decimal precio { get; set; }
+        public string codigo { get; set; }
 
     }
 
@@ -42,6 +46,10 @@ namespace ApiProductos.Models.ViewModels
         public string prod_image { get; set; }
 
         public bool prod_agotado { get; set; }
+
+        public decimal prod_precio { get; set; }
+
+        public string prod_codigo { get; set; }
 
     }
 
