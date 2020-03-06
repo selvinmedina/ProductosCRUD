@@ -22,8 +22,6 @@ namespace ApiProductos.Controllers
 {
     public class ProductosController : ApiController
     {
-        private ProductosDBContext db = new ProductosDBContext();
-
         // GET: api/Productos
         public async Task<ResponseHelper<List<ProductosSelect>>> GetProductos()
         {
@@ -76,7 +74,16 @@ namespace ApiProductos.Controllers
         {
             #region Declaracion de variables
             ResponseHelper<Producto> rs = new ResponseHelper<Producto>();
-            Producto producto = await db.Productos.FindAsync(id);
+
+            Producto producto = null;
+            await Task.Run(() =>
+            {
+                using (SqlConnection connection = General.GetConnection())
+                {
+                    connection.Open();
+                    producto = ObtenerProducto(id, connection);
+                }
+            });
             #endregion
 
             //si es nulo que retorne Error y un status code not found
@@ -87,6 +94,38 @@ namespace ApiProductos.Controllers
             rs.SetResponse(true, Status.Success, HttpStatusCode.InternalServerError);
             rs.Result = producto;
             return rs;
+        }
+
+        private Producto ObtenerProducto(int id, SqlConnection connection)
+        {
+            Producto producto = null;
+            try
+            {
+                producto = new SqlCommand(
+                            $"SELECT TOP 1 * FROM Prod.tbProductos WHERE prod_id = {id} AND prod_activo = 1", //Consulta que quiero hacer a la base de datos
+                            connection //Cadena de conexion
+                            )
+                            .ExecuteReader().Enumerate().
+                            Select(
+                                x => new Producto
+                                {
+                                    prod_id = (int)x["prod_id"],
+                                    prod_nombre = (string)x["prod_nombre"],
+                                    prod_marca = (string)x["prod_marca"],
+                                    categoria_id = (int)x["categoria_id"],
+                                    proveedor_id = (int)x["proveedor_id"],
+                                    prod_image = (string)x["prod_image"],
+                                    prod_agotado = (bool)x["prod_agotado"],
+                                    prod_codigo = (string)x["prod_codigo"],
+                                    prod_precio = (decimal)x["prod_precio"]
+                                })
+                                .FirstOrDefault();
+            }
+            catch (Exception ex)
+            {
+
+            }
+            return producto;
         }
 
         // PUT: api/Productos/5
@@ -122,6 +161,7 @@ namespace ApiProductos.Controllers
                                 command.Parameters.AddWithValue("@prod_agotado", SqlDbType.Bit).Value = producto.prod_agotado;
                                 command.Parameters.AddWithValue("@prod_precio", SqlDbType.Decimal).Value = producto.prod_precio;
                                 command.Parameters.AddWithValue("@prod_codigo", SqlDbType.NVarChar).Value = producto.prod_codigo;
+
                                 Result resultado = command
                                 .ExecuteReader()
                                 .Enumerate()
@@ -279,12 +319,60 @@ namespace ApiProductos.Controllers
             return rs.SetResponse(true, Status.Success, HttpStatusCode.OK); ;
         }
 
+        [Route("api/Productos/ActivarProducto")]
+        public async Task<ResponseHelper> ActivarProducto(int id)
+        {
+            ResponseHelper rs = new ResponseHelper();
+
+            try
+            {
+                await Task.Run(async () =>
+                {
+                    //SqlTransaction transaccion = null; //Usar la transaccion
+                    using (SqlConnection connection = General.GetConnection())
+                    {
+                        connection.Open();
+                        using (SqlCommand command = new SqlCommand("Prod.tbProducto_Activar", connection))
+                        {
+                            command.CommandType = CommandType.StoredProcedure; //Comando de tipo procedimiento
+                            Result resultado = null;
+                            using (TransactionScope transaction = new TransactionScope())
+                            {
+                                command.Parameters.AddWithValue("@prod_id", SqlDbType.Int).Value = id;
+
+                                resultado = command
+                                .ExecuteReader()
+                                .Enumerate()
+                                .Select(
+                                    x => new Result
+                                    {
+                                        Id = (int)x["Id"],
+                                        MensajeError = (string)x["MensajeError"]
+                                    })
+                                    .FirstOrDefault();
+                            }
+
+                            if (resultado?.Id == -1)
+                                rs.SetResponse(false, Status.Error, HttpStatusCode.InternalServerError);
+                            else
+                            {
+                                rs.Result = ObtenerProducto(id, connection);
+                                rs.SetResponse(true, Status.Success, HttpStatusCode.Created);
+                            }
+                        }
+                    }
+                });
+            }
+            catch (Exception)
+            {
+                return rs.SetResponse(false, Status.Error, HttpStatusCode.InternalServerError);
+            }
+
+            return rs.SetResponse(true, Status.Success, HttpStatusCode.OK);
+        }
+
         protected override void Dispose(bool disposing)
         {
-            if (disposing)
-            {
-                db.Dispose();
-            }
             base.Dispose(disposing);
         }
 
@@ -308,7 +396,7 @@ namespace ApiProductos.Controllers
                                 .ExecuteScalar() != null; //Ejecutar el SqlCommand
                     }
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
                     return false;
                 }
