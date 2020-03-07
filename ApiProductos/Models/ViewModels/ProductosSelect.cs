@@ -21,8 +21,8 @@ namespace ApiProductos.Models.ViewModels
             this.proveedor = proveedor;
             this.estado = estado;
             this.agotado = agotado;
-            this.prod_precio = precio;
-            this.prod_codigo = codigo;
+            this.precio = precio;
+            this.codigo = codigo;
         }
 
         public int id { get; set; }
@@ -33,7 +33,7 @@ namespace ApiProductos.Models.ViewModels
         public string proveedor { get; set; }
         public bool estado { get; set; }
         public bool agotado { get; set; }
-        public decimal prod_precio { get; set; }
-        public string prod_codigo { get; set; }
+        public decimal precio { get; set; }
+        public string codigo { get; set; }
     }
 }
